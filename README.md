@@ -52,8 +52,8 @@ Before you begin, ensure you have the following installed on your system:
 
 5. Set up the database:
 
-   - Ensure you have a database configured ( PostgreSQL, MySQL).
-   - Update the `config.py` file in the backend directory with your database credentials.
+   - Ensure you have a database configured ( PostgreSQL)
+     
 
 6. Run database migrations (if applicable):
 
