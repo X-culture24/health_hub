@@ -1,0 +1,45 @@
+.match-details-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.match-details-container h1 {
+  color: #8a2be2;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.match-details-container p {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.btn-primary {
+  background-color: #8a2be2;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.btn-primary:hover {
+  background-color: #7b1fa2;
+}
+
+.btn-secondary {
+  background-color: #ff4757;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.btn-secondary:hover {
+  background-color: #ff6b81;
+}

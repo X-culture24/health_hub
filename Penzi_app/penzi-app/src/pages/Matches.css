@@ -1,0 +1,66 @@
+.matches-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.typewriter {
+  font-size: 1.5rem;
+  margin: 20px 0;
+}
+
+.love-quote {
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #8a2be2;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background-color: #ff4757;
+  color: white;
+  padding: 15px 30px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.btn-primary:hover {
+  background-color: #ff6b81;
+}
+
+.matches-list {
+  margin-top: 30px;
+}
+
+.matches-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.matches-list li {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-secondary {
+  background-color: #8a2be2;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #7b1fa2;
+}

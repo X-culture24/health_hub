@@ -1,0 +1,35 @@
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.profile-container h2 {
+  color: #8a2be2; /* Purple */
+  font-size: 2rem;
+}
+
+.profile-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-container input,
+.profile-container select,
+.profile-container textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.profile-container textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.profile-container button {
+  margin-top: 10px;
+}
