@@ -1,0 +1,9 @@
+{
+    "username": "doctor1",
+    "password": "doctor123",
+    "email": "doctor@example.com",
+    "is_doctor": true,
+    "is_nurse": false,
+    "employer_id": "DOC001",
+    "work_email": "doctor@hospital.com"
+} 

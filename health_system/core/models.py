@@ -8,6 +8,22 @@ class User(AbstractUser):
     employer_id = models.CharField(max_length=100, unique=True, blank=False)  # Unique employer ID for login
     work_email = models.EmailField(unique=True, blank=False)  # Work email for staff registration
 
+    # Fix reverse accessor clashes
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_user_set',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_user_set',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+    )
+
     def __str__(self):
         return self.username
 
@@ -97,3 +113,35 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"Appointment for {self.client} on {self.scheduled_for}"
+
+class UserSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    notifications = models.BooleanField(default=True)
+    email_alerts = models.BooleanField(default=True)
+    dark_mode = models.BooleanField(default=False)
+    language = models.CharField(max_length=10, default='en')
+    timezone = models.CharField(max_length=50, default='UTC')
+    date_format = models.CharField(max_length=20, default='YYYY-MM-DD')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s settings"
+
+class UserProfile(models.Model):
+    """
+    Extended user profile model to store additional information.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    work_email = models.EmailField(unique=True)
+    employer_id = models.CharField(max_length=50, unique=True)
+    is_doctor = models.BooleanField(default=False)
+    is_nurse = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+    class Meta:
+        ordering = ['-created_at']

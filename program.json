@@ -1,0 +1,7 @@
+{
+    "name": "Weight Loss Program",
+    "description": "A comprehensive weight loss program focusing on nutrition and exercise",
+    "duration_weeks": 12,
+    "cost": 299.99,
+    "max_participants": 20
+} 
