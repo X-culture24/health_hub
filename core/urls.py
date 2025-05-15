@@ -16,6 +16,7 @@ urlpatterns = [
     path('clients/register/', views.register_client, name='register_client'),
     path('clients/<int:client_id>/', views.client_profile, name='client_profile'),
     path('clients/<int:client_id>/comprehensive/', views.get_client_comprehensive_info, name='client_comprehensive_info'),
+    path('clients/by-name/<str:first_name>/<str:last_name>/comprehensive/', views.get_client_comprehensive_info_by_name, name='client_comprehensive_info_by_name'),
     
     # Program endpoints
     path('programs/', views.program_list, name='program-list'),
@@ -32,7 +33,8 @@ urlpatterns = [
     # Prescription endpoints
     path('prescriptions/create/', views.create_prescription, name='create_prescription'),
     path('prescriptions/', views.prescription_list, name='prescription-list'),
-    path('prescriptions/<int:pk>/delete/', views.delete_prescription, name='delete-prescription'),
+    path('prescriptions/<int:pk>/', views.prescription_detail, name='prescription-detail'),
+    path('prescriptions/<int:pk>/update/', views.update_prescription, name='update-prescription'),
     
     # Metric endpoints
     path('metrics/record/', views.record_metric, name='record_metric'),
@@ -40,17 +42,19 @@ urlpatterns = [
     path('metrics/<int:pk>/', views.metric_detail, name='metric-detail'),
     path('metrics/<int:pk>/delete/', views.delete_metric, name='delete-metric'),
     
-    # Appointment endpoints
-    path('appointments/create/', views.create_appointment, name='create_appointment'),
-    path('appointments/', views.appointment_list, name='appointment-list'),
-    path('appointments/<int:pk>/delete/', views.delete_appointment, name='delete-appointment'),
+    # Encounter endpoints
+    path('encounters/create/', views.create_encounter, name='create_encounter'),
+    path('encounters/', views.list_encounters, name='list_encounters'),
+    path('encounters/<int:pk>/', views.get_encounter, name='get_encounter'),
+    path('encounters/<int:pk>/delete/', views.delete_encounter, name='delete_encounter'),
     
     # Report endpoints
-    path('reports/', views.generate_report, name='generate-report'),
+    path('reports/generate/', views.generate_report, name='generate-report'),
     
     # Settings endpoints
-    path('settings/', views.user_settings, name='user-settings'),
     path('change-password/', views.change_password, name='change-password'),
     path('program-metrics/', views.program_metrics, name='program-metrics'),
     path('resource-utilization/', views.resource_utilization, name='resource-utilization'),
+    path('staff/', views.staff_list, name='staff-list'),
+    path('webhook/', views.webhook_endpoint),
 ] 

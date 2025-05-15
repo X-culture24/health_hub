@@ -5,23 +5,45 @@ const BASE_URL = 'http://localhost:8000/api';
 const authAPI = {
     login: async (credentials) => {
         try {
+            console.log('Attempting login with:', { ...credentials, password: '[REDACTED]' });
             const response = await axios.post(`${BASE_URL}/auth/token/`, credentials);
+            console.log('Login response:', response.data);
+            
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
-                // Optionally store user info if returned by backend
-                if (response.data.user_id || response.data.username) {
-                    localStorage.setItem('user', JSON.stringify({
-                        id: response.data.user_id,
-                        username: response.data.username,
-                        is_doctor: response.data.is_doctor,
-                        is_nurse: response.data.is_nurse
-                    }));
-                }
+                // Store user info
+                const userData = {
+                    id: response.data.user_id,
+                    username: response.data.username,
+                    is_doctor: response.data.is_doctor,
+                    is_nurse: response.data.is_nurse
+                };
+                console.log('Storing user data:', userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+                return { success: true };
             }
-            return response.data;
+            console.error('No token in response:', response.data);
+            return { 
+                success: false, 
+                error: 'Invalid response from server' 
+            };
         } catch (error) {
-            console.error('Login error:', error);
-            throw error.response?.data || { error: 'Failed to login. Please check your credentials.' };
+            console.error('Login error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            
+            if (error.response?.status === 400) {
+                return { 
+                    success: false, 
+                    error: 'Invalid username or password'
+                };
+            }
+            return { 
+                success: false, 
+                error: 'Failed to login. Please try again.'
+            };
         }
     },
 

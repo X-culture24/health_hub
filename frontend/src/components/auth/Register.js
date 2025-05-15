@@ -97,7 +97,7 @@ function Register() {
     
     try {
       const { password2, ...registrationData } = formData;
-      const response = await authAPI.register({
+      await authAPI.register({
         username: registrationData.username,
         password: registrationData.password,
         work_email: registrationData.work_email,

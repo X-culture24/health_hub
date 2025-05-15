@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -26,20 +26,12 @@ const Reports = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [reportTypes, setReportTypes] = useState([]);
   const [reportData, setReportData] = useState(null);
 
-  useEffect(() => {
-    const loadReportTypes = async () => {
-      try {
-        const types = await reportAPI.getReportTypes();
-        setReportTypes(types);
-      } catch (err) {
-        setError('Failed to fetch report types');
-      }
-    };
-    loadReportTypes();
-  }, []);
+  const reportTypes = [
+    { value: 'program_enrollment', label: 'Program Enrollment' },
+    // Add more report types here as needed
+  ];
 
   const handleGenerateReport = async () => {
     if (!reportType || !startDate || !endDate) {
@@ -53,15 +45,15 @@ const Reports = () => {
     setReportData(null);
 
     try {
-      const response = await reportAPI.generateReport(
-        reportType,
-        startDate.toISOString().split('T')[0],
-        endDate.toISOString().split('T')[0]
-      );
-      setReportData(response.data);
+      const response = await reportAPI.generateReport({
+        type: reportType,
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0]
+      });
+      setReportData(response);
       setSuccess('Report generated successfully');
     } catch (err) {
-      setError('Failed to generate report');
+      setError(err.response?.data?.error || 'Failed to generate report');
     } finally {
       setLoading(false);
     }
@@ -177,9 +169,35 @@ const Reports = () => {
             <Typography variant="h6" gutterBottom>
               Report Results
             </Typography>
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {JSON.stringify(reportData, null, 2)}
-            </pre>
+            {reportType === 'program_enrollment' && (
+              <Box>
+                <Typography variant="body1">
+                  Total Enrollments: {reportData.total_enrollments}
+                </Typography>
+                <Typography variant="body1">
+                  Active Enrollments: {reportData.active_enrollments}
+                </Typography>
+                <Typography variant="body1">
+                  Completed Enrollments: {reportData.completed_enrollments}
+                </Typography>
+                <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                  Program Breakdown:
+                </Typography>
+                {reportData.program_breakdown.map((program, index) => (
+                  <Box key={index} sx={{ ml: 2, mb: 1 }}>
+                    <Typography variant="body1">
+                      {program.program}:
+                    </Typography>
+                    <Typography variant="body2" sx={{ ml: 2 }}>
+                      Total: {program.total}
+                    </Typography>
+                    <Typography variant="body2" sx={{ ml: 2 }}>
+                      Active: {program.active}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Paper>
         )}
       </Paper>

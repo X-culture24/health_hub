@@ -138,10 +138,10 @@ const Metrics = () => {
           <TableBody>
             {paginatedMetrics.map((metric) => (
               <TableRow key={metric.id}>
-                <TableCell>{metric.client_name}</TableCell>
+                <TableCell>{metric.client || metric.client_name}</TableCell>
                 <TableCell>{metric.name}</TableCell>
                 <TableCell>{metric.value}</TableCell>
-                <TableCell>{metric.unit}</TableCell>
+                <TableCell>{metric.unit || '-'}</TableCell>
                 <TableCell>{metric.recorded_by}</TableCell>
                 <TableCell>{new Date(metric.recorded_at).toLocaleString()}</TableCell>
                 <TableCell>

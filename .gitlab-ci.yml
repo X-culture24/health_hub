@@ -1,0 +1,64 @@
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  POSTGRES_DB: healthdb
+  POSTGRES_USER: healthuser
+  POSTGRES_PASSWORD: healthpass
+  DATABASE_URL: postgres://healthuser:healthpass@db:5432/healthdb
+
+lint_backend:
+  stage: lint
+  image: python:3.12
+  script:
+    - pip install flake8
+    - cd health_system && flake8 .
+
+lint_frontend:
+  stage: lint
+  image: node:20-alpine
+  script:
+    - cd frontend && npm ci && npm run lint || true
+
+backend_tests:
+  stage: test
+  image: python:3.12
+  services:
+    - postgres:15-alpine
+  variables:
+    POSTGRES_DB: $POSTGRES_DB
+    POSTGRES_USER: $POSTGRES_USER
+    POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    DATABASE_URL: $DATABASE_URL
+  before_script:
+    - cd health_system
+    - pip install -r requirements.txt
+    - python manage.py migrate
+  script:
+    - python manage.py test
+
+frontend_tests:
+  stage: test
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm test -- --watchAll=false
+
+build_docker:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t healthhub-backend ./health_system
+    - docker build -t healthhub-frontend ./frontend
+
+# Optional deploy stage
+# deploy:
+#   stage: deploy
+#   script:
+#     - echo "Deploy step here" 

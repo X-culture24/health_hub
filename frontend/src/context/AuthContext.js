@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import authAPI from '../services/authAPI';
 
 const AuthContext = createContext(null);
 
@@ -8,25 +9,27 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('token');
+  });
   const [loading, setLoading] = useState(false);
 
-  // No need to check /api/auth/user/ on mount
-
   const login = async (credentials) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await import('../services/authAPI').then(m => m.default.login(credentials));
-      // authAPI.login stores token and user in localStorage
-      setUser(JSON.parse(localStorage.getItem('user')));
-      setIsAuthenticated(true);
-      return { success: true };
+      const result = await authAPI.login(credentials);
+      if (result.success) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+        }
+        return { success: true };
+      }
+      return { success: false, error: result.error };
     } catch (error) {
-      console.error('Login failed:', error);
-      return {
-        success: false,
-        error: error.error || 'Login failed. Please try again.'
-      };
+      console.error('Login error:', error);
+      return { success: false, error: 'Failed to login' };
     } finally {
       setLoading(false);
     }
@@ -40,18 +43,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await import('../services/authAPI').then(m => m.default.register(userData));
-      setUser(JSON.parse(localStorage.getItem('user')));
-      setIsAuthenticated(true);
-      return { success: true };
+      const result = await authAPI.register(userData);
+      return result;
     } catch (error) {
-      console.error('Registration failed:', error);
-      return {
-        success: false,
-        error: error.error || 'Registration failed. Please try again.'
-      };
+      console.error('Registration error:', error);
+      return { success: false, error: 'Failed to register' };
     } finally {
       setLoading(false);
     }

@@ -14,9 +14,23 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { appointments, clients } from '../../services/api';
+import { clients } from '../../services/api';
+import axios from 'axios';
 
-const AppointmentCreate = () => {
+const ENCOUNTER_TYPES = [
+  'Consultation',
+  'Follow-up',
+  'Emergency',
+  'Routine'
+];
+const ENCOUNTER_STATUSES = [
+  'Scheduled',
+  'Completed',
+  'Cancelled',
+  'No Show'
+];
+
+const EncounterCreate = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,8 +38,9 @@ const AppointmentCreate = () => {
   const [clientList, setClientList] = useState([]);
   const [formData, setFormData] = useState({
     client_id: '',
+    encounter_type: 'Consultation',
     scheduled_for: '',
-    reason: '',
+    status: 'Scheduled',
     notes: ''
   });
 
@@ -33,10 +48,20 @@ const AppointmentCreate = () => {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    if (clientList.length > 0 && !formData.client_id) {
+      setFormData((prev) => ({ ...prev, client_id: clientList[0].id }));
+    }
+    if (clientList.length === 0) {
+      setError('No clients available. Please add a client first.');
+    }
+    // eslint-disable-next-line
+  }, [clientList]);
+
   const fetchClients = async () => {
     try {
       const response = await clients.list();
-      setClientList(response);
+      setClientList(response.data);
     } catch (err) {
       setError('Failed to fetch clients. Please try again later.');
       console.error(err);
@@ -47,39 +72,47 @@ const AppointmentCreate = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: name === 'client_id' ? Number(value) : value
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.client_id || !formData.scheduled_for) {
-      setError('Please fill in all required fields');
+      setError('Please fill in all required fields.');
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
-      
-      await appointments.create(formData);
+      const token = localStorage.getItem('token');
+      const payload = {
+        client_id: Number(formData.client_id),
+        encounter_type: formData.encounter_type,
+        scheduled_for: formData.scheduled_for,
+        status: formData.status,
+        notes: formData.notes || ''
+      };
+      await axios.post('http://localhost:8000/api/encounters/create/', payload, {
+        headers: { Authorization: `Token ${token}` }
+      });
       setSuccess(true);
-      
-      // Reset form after successful submission
       setFormData({
-        client_id: '',
+        client_id: clientList[0]?.id || '',
+        encounter_type: 'Consultation',
         scheduled_for: '',
-        reason: '',
+        status: 'Scheduled',
         notes: ''
       });
-      
-      // Redirect to appointments list after 2 seconds
       setTimeout(() => {
-        navigate('/appointments');
+        navigate('/encounters');
       }, 2000);
     } catch (err) {
-      setError(err.message || 'Failed to create appointment. Please try again.');
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError(err.message || 'Failed to create encounter. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -88,26 +121,23 @@ const AppointmentCreate = () => {
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
-        Create New Appointment
+        Create New Encounter
       </Typography>
-      
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-      
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Appointment created successfully! Redirecting...
+          Encounter created successfully! Redirecting...
         </Alert>
       )}
-      
       <Paper sx={{ p: 3, mt: 2 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required disabled={clientList.length === 0}>
                 <InputLabel id="client-label">Client</InputLabel>
                 <Select
                   labelId="client-label"
@@ -124,7 +154,22 @@ const AppointmentCreate = () => {
                 </Select>
               </FormControl>
             </Grid>
-            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel id="encounter-type-label">Encounter Type</InputLabel>
+                <Select
+                  labelId="encounter-type-label"
+                  name="encounter_type"
+                  value={formData.encounter_type}
+                  onChange={handleChange}
+                  label="Encounter Type"
+                >
+                  {ENCOUNTER_TYPES.map((type) => (
+                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -137,19 +182,22 @@ const AppointmentCreate = () => {
                 required
               />
             </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Reason"
-                name="reason"
-                value={formData.reason}
-                onChange={handleChange}
-                multiline
-                rows={2}
-              />
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel id="status-label">Status</InputLabel>
+                <Select
+                  labelId="status-label"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  label="Status"
+                >
+                  {ENCOUNTER_STATUSES.map((status) => (
+                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
-            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -161,12 +209,11 @@ const AppointmentCreate = () => {
                 rows={3}
               />
             </Grid>
-            
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/appointments')}
+                  onClick={() => navigate('/encounters')}
                   disabled={loading}
                 >
                   Cancel
@@ -175,10 +222,10 @@ const AppointmentCreate = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={loading}
+                  disabled={loading || clientList.length === 0}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
                 >
-                  {loading ? 'Creating...' : 'Create Appointment'}
+                  {loading ? 'Creating...' : 'Create Encounter'}
                 </Button>
               </Box>
             </Grid>
@@ -189,4 +236,4 @@ const AppointmentCreate = () => {
   );
 };
 
-export default AppointmentCreate; 
+export default EncounterCreate; 

@@ -169,7 +169,9 @@ const Prescriptions = () => {
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <Typography variant="h6" component="div">
-                        {prescription.client_name}
+                        {prescription.client?.first_name && prescription.client?.last_name
+                          ? `${prescription.client.first_name} ${prescription.client.last_name}`
+                          : prescription.client_name || 'Unknown Client'}
                       </Typography>
                       <IconButton
                         size="small"

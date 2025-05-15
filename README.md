@@ -1,138 +1,201 @@
-# Penzi Dating Service
+# Health Hub System
 
-Welcome to the **Penzi Dating Service** repository! This is a full-stack dating application built with **Flask** (backend) and **React** (frontend). This README will guide you through setting up, running, and navigating the app.
-
----
----
+A comprehensive healthcare management system built with Django REST Framework and React.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+- Python 3.9+
+- Node.js 18+
+- PostgreSQL 15+
+- Docker and Docker Compose (for containerized setup)
 
-- **Python 3.8+** (for Flask backend)
-- **React
-- **npm** (Node Package Manager) 
+## Local Development Setup
 
----
+### Backend Setup
 
-## Installation
+1. Create and activate a virtual environment:
+```bash
+python -m venv env
+source env/bin/activate  # On Windows: .\env\Scripts\activate
 ```
 
-### 1. Set Up the Backend (Flask)
+2. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-1. Navigate to the backend directory:
+3. Set up PostgreSQL database:
+```bash
+# Create database
+createdb healthhub
 
-   ```bash
-   cd matchmaker
-   ```
+# Configure database settings in health_system/settings.py or use environment variables:
+export DB_NAME=healthhub
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+export DB_HOST=localhost
+export DB_PORT=5432
+```
 
-2. Create a virtual environment (optional but recommended):
+4. Run migrations:
+```bash
+python manage.py migrate
+```
 
-   ```bash
-   python3 -m venv venv
-   ```
+5. Start the Django development server:
+```bash
+python manage.py runserver
+```
+The backend will be available at http://localhost:8000
 
-3. Activate the virtual environment:
-
-   - On macOS/Linux:
-
-     ```bash
-     source venv/bin/activate
-     ```
-
-4. Install the required Python packages:
-
-
-   The `requirements.txt` file includes:
-   - Flask
-   - Flask-SocketIO
-   - Flask-SQLAlchemy
-   - Requests
-   - Flask-CORS
-
-5. Set up the database:
-
-   - Ensure you have a database configured ( PostgreSQL)
-     
-
-6. Run database migrations (if applicable):
-
-   ```bash
-   flask db init
-   flask db migrate
-   flask db upgrade
-   ```
-
-### 3. Set Up the Frontend (React)
+### Frontend Setup
 
 1. Navigate to the frontend directory:
-
    ```bash
-   cd ../penzi-app
+cd frontend
    ```
 
-2. Install the required npm packages:
-
+2. Install Node.js dependencies:
    ```bash
-   npm install
-   ```
+npm install
+```
 
+3. Start the development server:
+```bash
+npm start
+```
+The frontend will be available at http://localhost:3000
 
-## Running the Backend (Flask)
+## Docker Setup
 
-1. Navigate to the backend directory:
+The application can be run using Docker and Docker Compose, which will set up all services (frontend, backend, and database) automatically.
 
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Running with Docker Compose
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd health-hub
+```
+
+2. Build and start the containers:
    ```bash
-   cd matchmaker
+   docker-compose up --build
    ```
 
-2. Start the Flask development server:
+This will:
+- Start PostgreSQL database on port 5432
+- Start Django backend on port 8000
+- Start React frontend on port 3000
 
+To stop the services:
+```bash
+docker-compose down
+```
+
+To remove all data (including database volumes):
    ```bash
-   python app.py
+docker-compose down -v
    ```
 
-   By default, the backend will run on `http://localhost:5000`.
+### Accessing the Application
 
----
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/api/docs/
 
-## Running the Frontend (React)
+## Environment Variables
 
-1. Navigate to the frontend directory:
+### Backend Environment Variables
+```
+DEBUG=1
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_SECRET_KEY=your-secret-key-here
+DB_NAME=healthhub
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+```
 
-   ```bash
-   cd penzi-app
-   ```
+### Frontend Environment Variables
+```
+REACT_APP_API_URL=http://localhost:8000
+NODE_ENV=development
+```
 
-2. Start the React development server:
+## Project Structure
 
-   ```bash
-   npm start
-   ```
+```
+health-hub/
+├── frontend/                # React frontend application
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── health_system/          # Django project settings
+├── core/                   # Main Django application
+├── requirements.txt        # Python dependencies
+├── docker-compose.yml      # Docker Compose configuration
+├── Dockerfile             # Backend Dockerfile
+└── frontend/Dockerfile    # Frontend Dockerfile
+```
 
+## Available API Endpoints
 
-   ```
+- `/api/auth/login/` - User authentication
+- `/api/auth/register/` - User registration
+- `/api/clients/` - Client management
+- `/api/programs/` - Health programs
+- `/api/prescriptions/` - Prescription management
+- `/api/reports/` - Report generation
 
-3. The frontend will run on `http://localhost:3000`. Open this URL in your browser to access the app.
+## Development Guidelines
 
----
+1. Always create feature branches from `main`
+2. Follow PEP 8 style guide for Python code
+3. Use ESLint and Prettier for JavaScript/React code
+4. Write tests for new features
+5. Update documentation when adding new features
 
-## Navigating the App
+## Troubleshooting
 
-### Home Page
-- The home page provides an overview of the Penzi Dating Service.
-- Users can sign up or log in to access the app.
+### Common Issues
 
+1. Database Connection Issues
+```bash
+# Check if PostgreSQL is running
+docker-compose ps
 
-### Dashboard
-- The dashboard displays user profiles, matches, and messages.
-- Users can swipe through profiles, like/dislike, and send messages.
+# View logs
+docker-compose logs db
+```
 
-### Chat Feature
-- Real-time chat functionality is powered by Flask-SocketIO.
-- Users can send and receive messages instantly.
+2. Frontend Build Issues
+```bash
+# Clean install dependencies
+cd frontend
+rm -rf node_modules
+npm install
+```
 
-### Profile Management
-- Users can update their profiles, upload photos, and change preferences.
+3. Backend Migration Issues
+```bash
+# Reset migrations
+docker-compose exec backend python manage.py migrate --fake-initial
+```
 
----
+## License
+
+[MIT License](LICENSE)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request

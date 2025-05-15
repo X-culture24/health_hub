@@ -39,6 +39,7 @@ export const clients = {
     delete: (id) => api.delete(`/clients/${id}/delete/`),
     search: (query) => api.get(`/clients/search/?q=${query}`),
     getComprehensiveInfo: (id) => api.get(`/clients/${id}/comprehensive/`),
+    getComprehensiveInfoByName: (firstName, lastName) => api.get(`/clients/by-name/${firstName}/${lastName}/comprehensive/`),
 };
 
 // Program endpoints
@@ -105,6 +106,11 @@ export const programMetrics = {
 // Resource utilization endpoint
 export const resources = {
     getUtilization: () => api.get('/resource-utilization/'),
+};
+
+// Staff endpoints
+export const staff = {
+    list: () => api.get('/staff/'),
 };
 
 export default api; 

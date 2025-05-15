@@ -24,7 +24,6 @@ import {
   Assignment as AssignmentIcon,
   ExitToApp as LogoutIcon,
   Assessment as AssessmentIcon,
-  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -48,7 +47,6 @@ function DashboardLayout({ children }) {
     { text: 'Prescriptions', icon: <HospitalIcon />, path: '/prescriptions' },
     { text: 'Programs', icon: <AssignmentIcon />, path: '/programs' },
     { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   const handleLogout = () => {

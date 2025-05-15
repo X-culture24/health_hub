@@ -18,15 +18,12 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
-  LocalHospital as ProgramIcon,
-  Event as AppointmentIcon,
-  Assessment as ReportIcon,
-  ExitToApp as LogoutIcon,
-  Person as ProfileIcon,
-  Settings as SettingsIcon,
+  Assessment as AssessmentIcon,
+  School as SchoolIcon,
+  HowToReg as EnrollmentIcon,
   LocalPharmacy as PrescriptionIcon,
   Timeline as MetricIcon,
-  HowToReg as EnrollmentIcon
+  Logout as LogoutIcon
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -38,17 +35,11 @@ const Layout = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Clients', icon: <PeopleIcon />, path: '/clients' },
-    { text: 'Programs', icon: <ProgramIcon />, path: '/programs' },
+    { text: 'Programs', icon: <SchoolIcon />, path: '/programs' },
     { text: 'Enrollments', icon: <EnrollmentIcon />, path: '/enrollments/create' },
-    { text: 'Appointments', icon: <AppointmentIcon />, path: '/appointments' },
+    { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
     { text: 'Prescriptions', icon: <PrescriptionIcon />, path: '/prescriptions' },
-    { text: 'Metrics', icon: <MetricIcon />, path: '/metrics' },
-    { text: 'Reports', icon: <ReportIcon />, path: '/reports' }
-  ];
-
-  const userMenuItems = [
-    { text: 'Profile', icon: <ProfileIcon />, path: '/profile' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' }
+    { text: 'Metrics', icon: <MetricIcon />, path: '/metrics' }
   ];
 
   const handleDrawerToggle = () => {
@@ -74,12 +65,6 @@ const Layout = () => {
       </List>
       <Divider />
       <List>
-        {userMenuItems.map((item) => (
-          <ListItem button key={item.text} onClick={() => navigate(item.path)}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
         <ListItem button onClick={handleLogout}>
           <ListItemIcon><LogoutIcon /></ListItemIcon>
           <ListItemText primary="Logout" />

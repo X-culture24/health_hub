@@ -39,6 +39,8 @@ ENV/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Misc
 .DS_Store 

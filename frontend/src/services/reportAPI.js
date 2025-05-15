@@ -35,14 +35,19 @@ const reportAPI = {
     ]);
   },
 
-  generateReport: (reportType, startDate, endDate) => {
-    return api.get('/reports/', {
-      params: {
-        type: reportType,
-        start_date: startDate,
-        end_date: endDate
-      }
-    });
+  generateReport: async (params) => {
+    try {
+      const response = await api.get('/reports/generate/', {
+        params: {
+          type: params.type,
+          start_date: params.start_date,
+          end_date: params.end_date
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
   downloadReport: (reportId, format = 'pdf') => {

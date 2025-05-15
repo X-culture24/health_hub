@@ -70,9 +70,11 @@ class Prescription(models.Model):
     medication_name = models.CharField(max_length=200)
     dosage = models.CharField(max_length=100)
     frequency = models.CharField(max_length=100)
+    duration = models.CharField(max_length=100, null=True, blank=True)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    prescribed_date = models.DateField(auto_now_add=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -89,31 +91,28 @@ class Metric(models.Model):
     def __str__(self):
         return f"{self.name}: {self.value}{self.unit} for {self.client}"
 
-class Appointment(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='appointments')
-    scheduled_with = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments_scheduled')
+ENCOUNTER_TYPE_CHOICES = [
+    ('Consultation', 'Consultation'),
+    ('Follow-up', 'Follow-up'),
+    ('Emergency', 'Emergency'),
+    ('Routine', 'Routine'),
+]
+
+ENCOUNTER_STATUS_CHOICES = [
+    ('Scheduled', 'Scheduled'),
+    ('Completed', 'Completed'),
+    ('Cancelled', 'Cancelled'),
+    ('No Show', 'No Show'),
+]
+
+class Encounter(models.Model):
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='encounters')
+    provider = models.ForeignKey('User', on_delete=models.CASCADE, related_name='encounters')
+    encounter_type = models.CharField(max_length=32, choices=ENCOUNTER_TYPE_CHOICES, default='Consultation')
     scheduled_for = models.DateTimeField()
-    reason = models.TextField(blank=True)
-    status = models.CharField(max_length=20, default='Scheduled', 
-                             choices=[('Scheduled', 'Scheduled'), 
-                                     ('Completed', 'Completed'),
-                                     ('Cancelled', 'Cancelled')])
+    status = models.CharField(max_length=20, choices=ENCOUNTER_STATUS_CHOICES, default='Scheduled')
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Appointment for {self.client} on {self.scheduled_for}"
-
-class UserSettings(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
-    notifications = models.BooleanField(default=True)
-    email_alerts = models.BooleanField(default=True)
-    dark_mode = models.BooleanField(default=False)
-    language = models.CharField(max_length=10, default='en')
-    timezone = models.CharField(max_length=50, default='UTC')
-    date_format = models.CharField(max_length=20, default='YYYY-MM-DD')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.username}'s settings"
+        return f"{self.encounter_type} for {self.client} with {self.provider} on {self.scheduled_for}"

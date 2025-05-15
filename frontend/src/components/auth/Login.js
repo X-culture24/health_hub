@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
     Container,
     Paper,
@@ -35,8 +35,17 @@ const Login = () => {
         setLoading(true);
         
         try {
-            await authAPI.login(formData);
+            console.log('Submitting login form...');
+            const result = await authAPI.login(formData);
+            console.log('Login result:', result);
+            
+            if (result.success) {
+                console.log('Login successful, navigating to dashboard...');
             navigate('/dashboard');
+            } else {
+                console.error('Login failed:', result.error);
+                setError(result.error || 'Failed to login. Please check your credentials.');
+            }
         } catch (err) {
             console.error('Login error:', err);
             setError(err.error || 'Failed to login. Please check your credentials.');
@@ -103,7 +112,7 @@ const Login = () => {
                             {loading ? <CircularProgress size={24} /> : 'Sign In'}
                         </Button>
                         <Box sx={{ textAlign: 'center' }}>
-                            <Link href="/register" variant="body2">
+                            <Link component={RouterLink} to="/register" variant="body2">
                                 {"Don't have an account? Sign Up"}
                             </Link>
                         </Box>

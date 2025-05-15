@@ -1,0 +1,70 @@
+version: '3.9'
+
+services:
+  backend:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - ./data/logs:/app/logs
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+      - DJANGO_SECRET_KEY=your-secret-key-here
+      - DB_HOST=db
+      - DB_NAME=system
+      - DB_USER=system
+      - DB_PASSWORD=system123
+      - DB_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - health_network
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+#      - ./frontend/build:/app/build  # Commenting out this line
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    depends_on:
+      - backend
+    networks:
+      - health_network
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres/backups:/backups
+    environment:
+      - POSTGRES_DB=system
+      - POSTGRES_USER=system
+      - POSTGRES_PASSWORD=system123
+    ports:
+      - "5432:5432"
+    networks:
+      - health_network
+
+networks:
+  health_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: health_hub_postgres_data
+  static_volume:
+    name: health_hub_static_data
+  media_volume:
+    name: health_hub_media_data 

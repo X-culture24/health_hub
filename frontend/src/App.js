@@ -25,11 +25,12 @@ import Prescriptions from './components/prescriptions/Prescriptions';
 import PrescriptionCreate from './components/prescriptions/PrescriptionCreate';
 import Metrics from './components/metrics/Metrics';
 import MetricRecord from './components/metrics/MetricRecord';
-import Settings from './components/settings/Settings';
 import Welcome from './components/Welcome';
-import UserProfile from './components/UserProfile';
 import ProgramView from './components/programs/ProgramView';
 import ProgramEdit from './components/programs/ProgramEdit';
+import EnrollmentsList from './components/enrollments/EnrollmentsList';
+import EncounterList from './components/EncounterList';
+import PrescriptionEdit from './components/PrescriptionEdit';
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
               <Route path="/programs/:id/edit" element={<ProgramEdit />} />
               
               {/* Enrollment Route */}
+              <Route path="/enrollments" element={<EnrollmentsList />} />
               <Route path="/enrollments/create" element={<EnrollmentCreate />} />
               
               {/* Appointment Routes */}
@@ -69,6 +71,7 @@ function App() {
               {/* Prescription Routes */}
               <Route path="/prescriptions" element={<Prescriptions />} />
               <Route path="/prescriptions/create" element={<PrescriptionCreate />} />
+              <Route path="/prescriptions/:id" element={<PrescriptionEdit />} />
               
               {/* Metric Routes */}
               <Route path="/metrics" element={<Metrics />} />
@@ -76,10 +79,9 @@ function App() {
               
               {/* Report Routes */}
               <Route path="/reports" element={<Reports />} />
-              
-              {/* User Routes */}
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<UserProfile />} />
+
+              {/* Encounter Routes */}
+              <Route path="/encounters" element={<EncounterList />} />
             </Route>
           </Routes>
         </Router>

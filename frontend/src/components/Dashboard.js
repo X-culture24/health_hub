@@ -21,9 +21,11 @@ import {
   Assignment as AssignmentIcon,
   LocalHospital as LocalHospitalIcon,
   TrendingUp as TrendingUpIcon,
-  Schedule as ScheduleIcon,
   Description as DescriptionIcon,
-  ArrowForward as ArrowForwardIcon
+  ArrowForward as ArrowForwardIcon,
+  School as SchoolIcon,
+  LocalPharmacy as LocalPharmacyIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,8 +34,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalClients: 0,
     activePrograms: 0,
-    upcomingAppointments: 0,
-    recentReports: 0
+    totalPrescriptions: 0,
+    metrics: []
   });
 
   useEffect(() => {
@@ -41,8 +43,8 @@ const Dashboard = () => {
     setStats({
       totalClients: 150,
       activePrograms: 12,
-      upcomingAppointments: 8,
-      recentReports: 25
+      totalPrescriptions: 50,
+      metrics: []
     });
   }, []);
 
@@ -74,29 +76,29 @@ const Dashboard = () => {
     </Card>
   );
 
-  const quickLinks = [
+  const quickActions = [
     {
-      title: "Manage Clients",
-      description: "Add, view, or update client information",
+      title: "Clients",
+      description: "View and manage client profiles",
       icon: <PeopleIcon />,
       path: "/clients"
     },
     {
-      title: "Appointments",
-      description: "Schedule and manage appointments",
-      icon: <EventIcon />,
-      path: "/appointments"
-    },
-    {
-      title: "Health Programs",
-      description: "View and manage health programs",
-      icon: <LocalHospitalIcon />,
+      title: "Programs",
+      description: "Manage healthcare programs",
+      icon: <SchoolIcon />,
       path: "/programs"
     },
     {
-      title: "Reports & Analytics",
-      description: "Generate and view reports",
-      icon: <AssignmentIcon />,
+      title: "Prescriptions",
+      description: "Manage prescriptions",
+      icon: <LocalPharmacyIcon />,
+      path: "/prescriptions"
+    },
+    {
+      title: "Reports",
+      description: "View analytics and reports",
+      icon: <AssessmentIcon />,
       path: "/reports"
     }
   ];
@@ -130,17 +132,17 @@ const Dashboard = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Upcoming Appointments"
-              value={stats.upcomingAppointments}
-              icon={<ScheduleIcon fontSize="large" />}
+              title="Total Prescriptions"
+              value={stats.totalPrescriptions}
+              icon={<LocalPharmacyIcon fontSize="large" />}
               color="#00bcd4"
-              onClick={() => navigate('/appointments')}
+              onClick={() => navigate('/prescriptions')}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Recent Reports"
-              value={stats.recentReports}
+              value={stats.metrics.length}
               icon={<DescriptionIcon fontSize="large" />}
               color="#4caf50"
               onClick={() => navigate('/reports')}
@@ -154,7 +156,7 @@ const Dashboard = () => {
                 Quick Links
               </Typography>
               <Grid container spacing={3}>
-                {quickLinks.map((link, index) => (
+                {quickActions.map((link, index) => (
                   <Grid item xs={12} sm={6} md={3} key={index}>
                     <Card 
                       sx={{ 

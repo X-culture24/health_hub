@@ -10,6 +10,10 @@ import {
   Alert,
   Box,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { clients } from '../../services/api';
 
@@ -21,10 +25,10 @@ const ClientRegistration = () => {
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
+    phone_number: '',
     date_of_birth: '',
     address: '',
-    emergency_contact: '',
+    gender: '',
   });
 
   const handleChange = (e) => {
@@ -44,7 +48,7 @@ const ClientRegistration = () => {
       await clients.create(formData);
       navigate('/clients');
     } catch (err) {
-      setError('Failed to register client');
+      setError(err.response?.data?.error || 'Failed to register client');
       setLoading(false);
     }
   };
@@ -66,6 +70,7 @@ const ClientRegistration = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
+                required
                 fullWidth
                 label="First Name"
                 name="first_name"
@@ -75,6 +80,7 @@ const ClientRegistration = () => {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
+                required
                 fullWidth
                 label="Last Name"
                 name="last_name"
@@ -82,26 +88,25 @@ const ClientRegistration = () => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel id="gender-label">Gender</InputLabel>
+                <Select
+                  labelId="gender-label"
+                  name="gender"
+                  value={formData.gender}
+                  label="Gender"
+                  onChange={handleChange}
+                >
+                  <MenuItem value="M">Male</MenuItem>
+                  <MenuItem value="F">Female</MenuItem>
+                  <MenuItem value="O">Other</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
-                fullWidth
-                label="Phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
+                required
                 fullWidth
                 label="Date of Birth"
                 name="date_of_birth"
@@ -114,20 +119,30 @@ const ClientRegistration = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Address"
-                name="address"
-                multiline
-                rows={3}
-                value={formData.address}
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
                 onChange={handleChange}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Emergency Contact"
-                name="emergency_contact"
-                value={formData.emergency_contact}
+                label="Phone Number"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Address"
+                name="address"
+                multiline
+                rows={3}
+                value={formData.address}
                 onChange={handleChange}
               />
             </Grid>

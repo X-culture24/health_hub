@@ -11,12 +11,20 @@ from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
-from .models import User, HealthProgram, Client, Enrollment, Prescription, Metric, Appointment, UserSettings, UserProfile
+from .models import User, HealthProgram, Client, Enrollment, Prescription, Metric, UserProfile, Encounter
 from django.contrib.auth import get_user_model
 from .utils import filter_by_permission
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from dateutil.parser import parse
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+import datetime
+
+# Change the notification URL to localhost
+NOTIFICATION_URL = "http://localhost:8000/api/webhook/"  # Local endpoint for testing
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -48,6 +56,12 @@ def register_user(request):
         if not all(data.get(field) for field in required_fields):
             return Response({
                 'error': f'Required fields: {", ".join(required_fields)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate role selection
+        if not data.get('is_doctor') and not data.get('is_nurse'):
+            return Response({
+                'error': 'Please select at least one role (Doctor or Nurse)'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate email format
@@ -277,14 +291,7 @@ def client_profile(request, client_id):
             'unit': metric.unit,
             'recorded_by': metric.recorded_by.username if metric.recorded_by else None,
             'recorded_at': metric.recorded_at
-        } for metric in client.metrics.all()],
-        'appointments': [{
-            'scheduled_with': appointment.scheduled_with.username,
-            'scheduled_for': appointment.scheduled_for,
-            'reason': appointment.reason,
-            'status': appointment.status,
-            'notes': appointment.notes
-        } for appointment in client.appointments.all()]
+        } for metric in client.metrics.all()]
     }
     
     cache.set(cache_key, response_data, 60 * 15)  # Cache for 15 minutes
@@ -399,31 +406,6 @@ def enrollment_detail(request, pk):
         'is_active': enrollment.is_active
     })
 
-@api_view(['GET', 'PUT'])
-@permission_classes([IsAuthenticated])
-def user_settings(request):
-    if request.method == 'GET':
-        settings, created = UserSettings.objects.get_or_create(user=request.user)
-        return Response({
-            'notifications': settings.notifications,
-            'email_alerts': settings.email_alerts,
-            'dark_mode': settings.dark_mode,
-            'language': settings.language,
-            'timezone': settings.timezone,
-            'date_format': settings.date_format
-        })
-    
-    elif request.method == 'PUT':
-        settings, created = UserSettings.objects.get_or_create(user=request.user)
-        allowed_fields = ['notifications', 'email_alerts', 'dark_mode', 'language', 'timezone', 'date_format']
-        
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(settings, field, request.data[field])
-        
-        settings.save()
-        return Response({'message': 'Settings updated successfully'})
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_password(request):
@@ -466,37 +448,65 @@ def generate_report(request):
     date_filter = {}
     if start_date and end_date:
         date_filter = {
-            'created_at__range': [start_date, end_date]
+            'enrollment_date__range': [start_date, end_date]
         }
     
-    if report_type == 'client_attendance':
-        appointments = Appointment.objects.filter(**date_filter)
-        data = {
-            'total_appointments': appointments.count(),
-            'completed_appointments': appointments.filter(status='Completed').count(),
-            'cancelled_appointments': appointments.filter(status='Cancelled').count(),
-            'scheduled_appointments': appointments.filter(status='Scheduled').count(),
-        }
-    
-    elif report_type == 'program_enrollment':
+    if report_type == 'program_enrollment':
         enrollments = Enrollment.objects.filter(**date_filter)
-        data = {
-            'total_enrollments': enrollments.count(),
-            'active_enrollments': enrollments.filter(is_active=True).count(),
-            'completed_enrollments': enrollments.filter(is_active=False).count(),
-            'program_breakdown': [{
-                'program': program.name,
-                'total': enrollments.filter(program=program).count(),
-                'active': enrollments.filter(program=program, is_active=True).count()
-            } for program in HealthProgram.objects.all()]
-        }
-    
+        
+        # Create the PDF
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        
+        # Add title
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, 750, "Program Enrollment Report")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, 730, f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        p.drawString(50, 710, f"Period: {start_date} to {end_date}")
+        
+        # Add summary
+        y = 670
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, y, "Summary")
+        p.setFont("Helvetica", 12)
+        y -= 25
+        p.drawString(70, y, f"Total Enrollments: {enrollments.count()}")
+        y -= 20
+        p.drawString(70, y, f"Active Enrollments: {enrollments.filter(is_active=True).count()}")
+        y -= 20
+        p.drawString(70, y, f"Completed Enrollments: {enrollments.filter(is_active=False).count()}")
+        
+        # Add program breakdown
+        y -= 40
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, y, "Program Breakdown")
+        p.setFont("Helvetica", 12)
+        
+        for program in HealthProgram.objects.all():
+            y -= 25
+            program_enrollments = enrollments.filter(program=program)
+            p.drawString(70, y, f"{program.name}:")
+            p.drawString(250, y, f"Total: {program_enrollments.count()}")
+            p.drawString(350, y, f"Active: {program_enrollments.filter(is_active=True).count()}")
+        
+        p.showPage()
+        p.save()
+        
+        # Get the value of the buffer
+        pdf = buffer.getvalue()
+        buffer.close()
+        
+        # Create the HTTP response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="enrollment_report.pdf"'
+        response.write(pdf)
+        
+        return response
     else:
         return Response({
             'error': 'Invalid report type'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-    return Response(data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -553,6 +563,8 @@ def prescription_list(request):
             'id': prescription.id,
             'client': {
                 'id': prescription.client.id,
+                'first_name': prescription.client.first_name,
+                'last_name': prescription.client.last_name,
                 'name': f"{prescription.client.first_name} {prescription.client.last_name}"
             },
             'medication_name': prescription.medication_name,
@@ -660,59 +672,6 @@ def metric_detail(request, pk):
         'recorded_at': metric.recorded_at
     })
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_appointment(request):
-    try:
-        client_id = request.data.get('client_id')
-        scheduled_with_id = request.data.get('scheduled_with_id')
-        scheduled_for = request.data.get('scheduled_for')
-        
-        if not all([client_id, scheduled_with_id, scheduled_for]):
-            return Response({
-                'error': 'client_id, scheduled_with_id, and scheduled_for are required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        client = get_object_or_404(Client, id=client_id)
-        scheduled_with = get_object_or_404(User, id=scheduled_with_id)
-        
-        # Verify that scheduled_with is a medical staff member
-        if not (scheduled_with.is_doctor or scheduled_with.is_nurse):
-            return Response({
-                'error': 'Appointments can only be scheduled with medical staff'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Validate datetime format
-        try:
-            scheduled_for = parse(scheduled_for)
-        except ValueError:
-            return Response({
-                'error': 'Invalid datetime format for scheduled_for'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        appointment = Appointment.objects.create(
-            client=client,
-            scheduled_with=scheduled_with,
-            scheduled_for=scheduled_for,
-            reason=request.data.get('reason', ''),
-            notes=request.data.get('notes', '')
-        )
-        
-        return Response({
-            'id': appointment.id,
-            'client': str(client),
-            'scheduled_with': scheduled_with.username,
-            'scheduled_for': appointment.scheduled_for,
-            'reason': appointment.reason,
-            'status': appointment.status,
-            'notes': appointment.notes,
-            'created_at': appointment.created_at
-        }, status=status.HTTP_201_CREATED)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def program_metrics(request):
@@ -768,13 +727,6 @@ def resource_utilization(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_client_comprehensive_info(request, client_id):
-    """
-    Get comprehensive information about a client including:
-    - Basic client information
-    - All enrollments and their programs
-    - All prescriptions
-    - All appointments
-    """
     try:
         client = Client.objects.get(id=client_id)
     except Client.DoesNotExist:
@@ -808,18 +760,6 @@ def get_client_comprehensive_info(request, client_id):
         'created_at': prescription.created_at
     } for prescription in prescriptions]
 
-    # Get all appointments for the client
-    appointments = Appointment.objects.filter(client=client)
-    appointments_data = [{
-        'id': appointment.id,
-        'scheduled_with': appointment.scheduled_with.username if appointment.scheduled_with else None,
-        'scheduled_for': appointment.scheduled_for,
-        'reason': appointment.reason,
-        'status': appointment.status,
-        'notes': appointment.notes,
-        'created_at': appointment.created_at
-    } for appointment in appointments]
-
     # Compile all the data
     response_data = {
         'client': {
@@ -834,8 +774,7 @@ def get_client_comprehensive_info(request, client_id):
             'created_at': client.created_at
         },
         'enrollments': enrollments_data,
-        'prescriptions': prescriptions_data,
-        'appointments': appointments_data
+        'prescriptions': prescriptions_data
     }
 
     return Response(response_data)
@@ -961,71 +900,309 @@ def delete_metric(request, pk):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def appointment_list(request):
+def get_client_comprehensive_info_by_name(request, first_name, last_name):
     """
-    List all appointments, filtered by user permissions
+    Get comprehensive information about a client by name, including:
+    - Basic client information
+    - All enrollments and their programs
+    - All prescriptions
+    - All appointments
     """
     try:
-        appointments = filter_by_permission(Appointment.objects.all(), request.user)
-        appointment_data = [{
-            'id': appointment.id,
-            'client': {
-                'id': appointment.client.id,
-                'name': f"{appointment.client.first_name} {appointment.client.last_name}"
-            },
-            'scheduled_with': appointment.scheduled_with.username if appointment.scheduled_with else None,
-            'scheduled_for': appointment.scheduled_for,
-            'reason': appointment.reason,
-            'status': appointment.status,
-            'notes': appointment.notes,
-            'created_at': appointment.created_at
-        } for appointment in appointments]
-        return Response(appointment_data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        client = Client.objects.get(first_name__iexact=first_name, last_name__iexact=last_name)
+    except Client.DoesNotExist:
+        return Response({"error": "Client not found"}, status=404)
 
-@api_view(['DELETE'])
+    enrollments = Enrollment.objects.filter(client=client, is_active=True)
+    enrollments_data = [{
+        'id': enrollment.id,
+        'program': {
+            'id': enrollment.program.id,
+            'name': enrollment.program.name,
+            'description': enrollment.program.description
+        },
+        'enrolled_by': enrollment.enrolled_by.username if enrollment.enrolled_by else None,
+        'enrollment_date': enrollment.enrollment_date,
+        'is_active': enrollment.is_active
+    } for enrollment in enrollments]
+
+    prescriptions = Prescription.objects.filter(client=client)
+    prescriptions_data = [{
+        'id': prescription.id,
+        'medication_name': prescription.medication_name,
+        'dosage': prescription.dosage,
+        'frequency': prescription.frequency,
+        'start_date': prescription.start_date,
+        'end_date': prescription.end_date,
+        'notes': prescription.notes,
+        'prescribed_by': prescription.prescribed_by.username if prescription.prescribed_by else None,
+        'created_at': prescription.created_at
+    } for prescription in prescriptions]
+
+    appointments = Appointment.objects.filter(client=client)
+    appointments_data = [{
+        'id': appointment.id,
+        'scheduled_with': appointment.scheduled_with.username if appointment.scheduled_with else None,
+        'scheduled_for': appointment.scheduled_for,
+        'reason': appointment.reason,
+        'status': appointment.status,
+        'notes': appointment.notes,
+        'created_at': appointment.created_at
+    } for appointment in appointments]
+
+    response_data = {
+        'client': {
+            'id': client.id,
+            'first_name': client.first_name,
+            'last_name': client.last_name,
+            'date_of_birth': client.date_of_birth,
+            'gender': client.gender,
+            'address': client.address,
+            'phone_number': client.phone_number,
+            'email': client.email,
+            'created_at': client.created_at
+        },
+        'enrollments': enrollments_data,
+        'prescriptions': prescriptions_data,
+        'appointments': appointments_data
+    }
+    return Response(response_data)
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def delete_appointment(request, pk):
+def staff_list(request):
+    staff = User.objects.filter(Q(is_doctor=True) | Q(is_nurse=True))
+    data = [
+        {
+            'id': user.id,
+            'first_name': getattr(user, 'first_name', ''),
+            'last_name': getattr(user, 'last_name', ''),
+            'username': user.username,
+            'role': 'Doctor' if getattr(user, 'is_doctor', False) else 'Nurse'
+        }
+        for user in staff
+    ]
+    return Response(data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_appointment_quick(request):
     """
-    Delete an appointment. Only doctors and nurses can delete appointments.
+    Create an appointment with just client_id and scheduled_for. The staff is the current user.
+    """
+    client_id = request.data.get('client_id')
+    scheduled_for = request.data.get('scheduled_for')
+    reason = request.data.get('reason', '')
+    notes = request.data.get('notes', '')
+
+    if not client_id or not scheduled_for:
+        return Response({'error': 'client_id and scheduled_for are required'}, status=400)
+
+    client = get_object_or_404(Client, id=client_id)
+    staff = request.user
+    if not (staff.is_doctor or staff.is_nurse):
+        return Response({'error': 'Only medical staff can create appointments this way'}, status=403)
+
+    appointment = Appointment.objects.create(
+        client=client,
+        scheduled_with=staff,
+        scheduled_for=scheduled_for,
+        reason=reason,
+        notes=notes
+    )
+    return Response({
+        'id': appointment.id,
+        'client': str(client),
+        'scheduled_with': staff.username,
+        'scheduled_for': appointment.scheduled_for,
+        'reason': appointment.reason,
+        'status': appointment.status,
+        'notes': appointment.notes,
+        'created_at': appointment.created_at
+    }, status=201)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_encounter(request):
+    """
+    Create a new healthcare encounter (visit).
     """
     if not (request.user.is_doctor or request.user.is_nurse):
-        return Response({
-            'error': 'Only medical staff can delete appointments'
-        }, status=status.HTTP_403_FORBIDDEN)
-    
-    try:
-        appointment = get_object_or_404(Appointment, pk=pk)
-        appointment.delete()
-        return Response({
-            'message': 'Appointment deleted successfully'
-        }, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': 'Only medical staff can create encounters'}, status=403)
+    client_id = request.data.get('client_id')
+    encounter_type = request.data.get('encounter_type', 'Consultation')
+    scheduled_for = request.data.get('scheduled_for')
+    notes = request.data.get('notes', '')
+    status_ = request.data.get('status', 'Scheduled')
+    if not client_id or not scheduled_for:
+        return Response({'error': 'client_id and scheduled_for are required'}, status=400)
+    client = get_object_or_404(Client, id=client_id)
+    encounter = Encounter.objects.create(
+        client=client,
+        provider=request.user,
+        encounter_type=encounter_type,
+        scheduled_for=scheduled_for,
+        status=status_,
+        notes=notes
+    )
+    return Response({
+        'id': encounter.id,
+        'client': str(client),
+        'provider': request.user.username,
+        'encounter_type': encounter.encounter_type,
+        'scheduled_for': encounter.scheduled_for,
+        'status': encounter.status,
+        'notes': encounter.notes,
+        'created_at': encounter.created_at
+    }, status=201)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_encounters(request):
+    """
+    List all encounters (filtered by user permissions).
+    """
+    if request.user.is_doctor or request.user.is_nurse:
+        encounters = Encounter.objects.all()
+    else:
+        encounters = Encounter.objects.filter(client__user=request.user)
+    data = [{
+        'id': e.id,
+        'client': str(e.client),
+        'provider': e.provider.username,
+        'encounter_type': e.encounter_type,
+        'scheduled_for': e.scheduled_for,
+        'status': e.status,
+        'notes': e.notes,
+        'created_at': e.created_at
+    } for e in encounters]
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_encounter(request, pk):
+    encounter = get_object_or_404(Encounter, pk=pk)
+    return Response({
+        'id': encounter.id,
+        'client': str(encounter.client),
+        'provider': encounter.provider.username,
+        'encounter_type': encounter.encounter_type,
+        'scheduled_for': encounter.scheduled_for,
+        'status': encounter.status,
+        'notes': encounter.notes,
+        'created_at': encounter.created_at
+    })
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_prescription(request, pk):
+def delete_encounter(request, pk):
     """
-    Delete a prescription. Only doctors can delete prescriptions.
+    Delete an encounter. Only doctors and nurses can delete encounters.
     """
-    if not request.user.is_doctor:
-        return Response({
-            'error': 'Only doctors can delete prescriptions'
-        }, status=status.HTTP_403_FORBIDDEN)
-    
+    if not (request.user.is_doctor or request.user.is_nurse):
+        return Response({'error': 'Only medical staff can delete encounters'}, status=403)
+    try:
+        encounter = get_object_or_404(Encounter, pk=pk)
+        encounter.delete()
+        return Response({'message': 'Encounter deleted successfully'}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+def webhook_endpoint(request):
+    """Test endpoint to receive notifications"""
+    print("Received webhook notification:", request.data)  # For testing in console
+    return Response({
+        'status': 'received',
+        'data': request.data
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def prescription_detail(request, pk):
+    """
+    Get details of a specific prescription
+    """
     try:
         prescription = get_object_or_404(Prescription, pk=pk)
-        prescription.delete()
-        return Response({
-            'message': 'Prescription deleted successfully'
-        }, status=status.HTTP_200_OK)
+        
+        data = {
+            'id': prescription.id,
+            'client': {
+                'id': prescription.client.id,
+                'first_name': prescription.client.first_name,
+                'last_name': prescription.client.last_name
+            },
+            'medication_name': prescription.medication_name,
+            'dosage': prescription.dosage,
+            'frequency': prescription.frequency,
+            'duration': prescription.duration,
+            'notes': prescription.notes,
+            'prescribed_date': prescription.prescribed_date,
+            'prescribed_by': {
+                'id': prescription.prescribed_by.id,
+                'username': prescription.prescribed_by.username
+            }
+        }
+        
+        return Response(data)
     except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_prescription(request, pk):
+    """
+    Update a prescription
+    """
+    try:
+        prescription = get_object_or_404(Prescription, pk=pk)
+        
+        # Only doctors can update prescriptions
+        if not request.user.is_doctor:
+            return Response(
+                {'error': 'Only doctors can update prescriptions'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Update fields
+        if 'medication_name' in request.data:
+            prescription.medication_name = request.data['medication_name']
+        if 'dosage' in request.data:
+            prescription.dosage = request.data['dosage']
+        if 'frequency' in request.data:
+            prescription.frequency = request.data['frequency']
+        if 'duration' in request.data:
+            prescription.duration = request.data['duration']
+        if 'notes' in request.data:
+            prescription.notes = request.data['notes']
+            
+        prescription.save()
+        
         return Response({
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'id': prescription.id,
+            'client': {
+                'id': prescription.client.id,
+                'first_name': prescription.client.first_name,
+                'last_name': prescription.client.last_name
+            },
+            'medication_name': prescription.medication_name,
+            'dosage': prescription.dosage,
+            'frequency': prescription.frequency,
+            'duration': prescription.duration,
+            'notes': prescription.notes,
+            'prescribed_date': prescription.prescribed_date,
+            'prescribed_by': {
+                'id': prescription.prescribed_by.id,
+                'username': prescription.prescribed_by.username
+            }
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
