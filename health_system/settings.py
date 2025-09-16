@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
+    # Temporarily disabled celery apps for testing
+    # 'django_celery_beat',
+    # 'django_celery_results',
+    # 'notifications',
     'core',
 ]
 
@@ -176,3 +180,47 @@ REST_FRAMEWORK = {
 
 # Custom user model
 AUTH_USER_MODEL = 'core.User'
+
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Payment Configuration
+MPESA_CONFIG = {
+    'CONSUMER_KEY': os.environ.get('MPESA_CONSUMER_KEY', ''),
+    'CONSUMER_SECRET': os.environ.get('MPESA_CONSUMER_SECRET', ''),
+    'SHORTCODE': os.environ.get('MPESA_SHORTCODE', ''),
+    'PASSKEY': os.environ.get('MPESA_PASSKEY', ''),
+    'CALLBACK_URL': os.environ.get('MPESA_CALLBACK_URL', 'http://localhost:8000/api/payments/mpesa/callback/'),
+}
+
+AIRTEL_CONFIG = {
+    'CLIENT_ID': os.environ.get('AIRTEL_CLIENT_ID', ''),
+    'CLIENT_SECRET': os.environ.get('AIRTEL_CLIENT_SECRET', ''),
+    'CALLBACK_URL': os.environ.get('AIRTEL_CALLBACK_URL', 'http://localhost:8000/api/payments/airtel/callback/'),
+}
+
+# Twilio Configuration for SMS
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@healthhub.com')

@@ -51,7 +51,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'core',
+    'health_system.core',
+    'health_system.referrals',
+    'referrals',
 ]
 
 MIDDLEWARE = [

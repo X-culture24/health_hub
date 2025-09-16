@@ -1,0 +1,1 @@
+{"virtualbox":{"/vagrant":{"type":"virtualbox","guestpath":"/vagrant","hostpath":"/home/lawrence/kenya_health_system","disabled":false,"__vagrantfile":true},"/home/vagrant/kenya_health_system":{"type":"virtualbox","guestpath":"/home/vagrant/kenya_health_system","hostpath":"/home/lawrence/kenya_health_system","disabled":false,"__vagrantfile":true}}}

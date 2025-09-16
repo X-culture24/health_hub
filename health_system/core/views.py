@@ -17,6 +17,8 @@ from rest_framework.authtoken.models import Token
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from .serializers import ClientSerializer, UserProfileSerializer
+from django.db.models import Avg
+from .models import Payment
 
 @swagger_auto_schema(
     method='post',
@@ -648,3 +650,93 @@ def list_medical_staff(request):
     )
     serializer = UserProfileSerializer(medical_staff, many=True)
     return Response(serializer.data)
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Get a specific health program by ID",
+    responses={200: "Program details", 404: "Program not found"}
+)
+@swagger_auto_schema(
+    method='put',
+    operation_description="Update a specific health program by ID",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['name'],
+        properties={
+            'name': openapi.Schema(type=openapi.TYPE_STRING, description='Program name'),
+            'description': openapi.Schema(type=openapi.TYPE_STRING, description='Program description'),
+        },
+    ),
+    responses={200: "Program updated successfully", 400: "Invalid input"}
+)
+@swagger_auto_schema(
+    method='delete',
+    operation_description="Delete a specific health program by ID",
+    responses={204: "Program deleted successfully", 404: "Program not found"}
+)
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def program_detail(request, pk):
+    program = get_object_or_404(HealthProgram, pk=pk)
+    if request.method == 'GET':
+        return Response({
+            'id': program.id,
+            'name': program.name,
+            'description': program.description,
+            'created_by': program.created_by.username if program.created_by else None,
+            'created_at': program.created_at
+        })
+    elif request.method == 'PUT':
+        # Only allow doctors or nurses to update a program
+        if not (hasattr(request.user, 'is_doctor') and request.user.is_doctor) and not (hasattr(request.user, 'is_nurse') and request.user.is_nurse):
+            return Response({'error': 'Only medical staff can update programs'}, status=403)
+        name = request.data.get('name')
+        description = request.data.get('description', '')
+        if not name:
+            return Response({'error': 'Program name is required'}, status=400)
+        program.name = name
+        program.description = description
+        program.save()
+        return Response({
+            'id': program.id,
+            'name': program.name,
+            'description': program.description,
+            'created_by': program.created_by.username if program.created_by else None,
+            'created_at': program.created_at
+        })
+    elif request.method == 'DELETE':
+        program.delete()
+        return Response(status=204)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def metric_list(request):
+    metrics = Metric.objects.all()
+    data = [
+        {
+            'id': metric.id,
+            'client': str(metric.client),
+            'name': metric.name,
+            'value': metric.value,
+            'unit': metric.unit,
+            'recorded_by': metric.recorded_by.username if metric.recorded_by else None,
+            'recorded_at': metric.recorded_at,
+        }
+        for metric in metrics
+    ]
+    return Response(data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def metric_detail(request, pk):
+    metric = get_object_or_404(Metric, pk=pk)
+    data = {
+        'id': metric.id,
+        'client': str(metric.client),
+        'name': metric.name,
+        'value': metric.value,
+        'unit': metric.unit,
+        'recorded_by': metric.recorded_by.username if metric.recorded_by else None,
+        'recorded_at': metric.recorded_at,
+    }
+    return Response(data)

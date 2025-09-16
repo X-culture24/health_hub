@@ -37,7 +37,7 @@ const reportAPI = {
 
   generateReport: async (params) => {
     try {
-      const response = await api.get('/reports/generate/', {
+      const response = await api.get('/reports/', {
         params: {
           type: params.type,
           start_date: params.start_date,

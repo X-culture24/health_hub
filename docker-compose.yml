@@ -1,10 +1,11 @@
-version: '3.9'
+# Docker Compose configuration for Kenya Health System
 
 services:
   backend:
     build: .
     command: >
       sh -c "python manage.py migrate &&
+             python manage.py setup_kenya_health_system --sample-data &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
@@ -15,15 +16,19 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-      - DJANGO_SECRET_KEY=your-secret-key-here
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - DJANGO_SECRET_KEY=kenya-health-system-secret-key-2024
       - DB_HOST=db
-      - DB_NAME=system
-      - DB_USER=system
-      - DB_PASSWORD=system123
+      - DB_NAME=kenya_health_system
+      - DB_USER=kenya_health_user
+      - DB_PASSWORD=KenyaHealth2024!
       - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
       - db
+      - redis
     networks:
       - health_network
 
@@ -32,16 +37,67 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-#      - ./frontend/build:/app/build  # Commenting out this line
     ports:
       - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
       - NODE_ENV=development
+      - GENERATE_SOURCEMAP=false
     depends_on:
       - backend
     networks:
       - health_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - health_network
+
+  celery:
+    build: .
+    command: celery -A health_system worker --loglevel=info --concurrency=4
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - DB_HOST=db
+      - DB_NAME=kenya_health_system
+      - DB_USER=kenya_health_user
+      - DB_PASSWORD=KenyaHealth2024!
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - health_network
+    restart: unless-stopped
+
+  celery-beat:
+    build: .
+    command: celery -A health_system beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - DB_HOST=db
+      - DB_NAME=kenya_health_system
+      - DB_USER=kenya_health_user
+      - DB_PASSWORD=KenyaHealth2024!
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    networks:
+      - health_network
+    restart: unless-stopped
 
   db:
     image: postgres:15-alpine
@@ -49,13 +105,20 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./data/postgres/backups:/backups
     environment:
-      - POSTGRES_DB=system
-      - POSTGRES_USER=system
-      - POSTGRES_PASSWORD=system123
+      - POSTGRES_DB=kenya_health_system
+      - POSTGRES_USER=kenya_health_user
+      - POSTGRES_PASSWORD=KenyaHealth2024!
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     ports:
       - "5432:5432"
     networks:
       - health_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kenya_health_user -d kenya_health_system"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   health_network:
@@ -63,8 +126,8 @@ networks:
 
 volumes:
   postgres_data:
-    name: health_hub_postgres_data
+    name: kenya_health_postgres_data
   static_volume:
-    name: health_hub_static_data
+    name: kenya_health_static_data
   media_volume:
-    name: health_hub_media_data 
+    name: kenya_health_media_data 

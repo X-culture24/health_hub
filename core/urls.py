@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.authtoken.views import obtain_auth_token
 from . import views
+from . import api_views
 
 urlpatterns = [
     # Authentication
@@ -57,4 +58,35 @@ urlpatterns = [
     path('resource-utilization/', views.resource_utilization, name='resource-utilization'),
     path('staff/', views.staff_list, name='staff-list'),
     path('webhook/', views.webhook_endpoint),
-] 
+    
+    # Enhanced API endpoints
+    # Appointments
+    path('api/appointments/', api_views.appointments_api, name='api-appointments'),
+    path('api/appointments/<int:doctor_id>/<str:date>/slots/', api_views.available_slots, name='api-available-slots'),
+    path('api/appointments/<int:appointment_id>/status/', api_views.update_appointment_status, name='api-update-appointment-status'),
+    
+    # Virtual Pharmacist
+    path('api/pharmacy/interactions/', api_views.check_drug_interactions, name='api-drug-interactions'),
+    path('api/pharmacy/recommendations/', api_views.get_drug_recommendations, name='api-drug-recommendations'),
+    path('api/pharmacy/validate/', api_views.validate_prescription, name='api-validate-prescription'),
+    
+    # Pharmacy Inventory
+    path('api/inventory/', api_views.pharmacy_inventory, name='api-pharmacy-inventory'),
+    path('api/inventory/<int:inventory_id>/stock/', api_views.update_inventory_stock, name='api-update-inventory-stock'),
+    path('api/inventory/alerts/', api_views.inventory_alerts, name='api-inventory-alerts'),
+    
+    # Enhanced Prescriptions
+    path('api/prescriptions/enhanced/', api_views.enhanced_prescriptions, name='api-enhanced-prescriptions'),
+    path('api/prescriptions/<int:prescription_id>/dispense/', api_views.dispense_prescription, name='api-dispense-prescription'),
+    
+    # Payments
+    path('api/payments/initiate/', api_views.initiate_payment, name='api-initiate-payment'),
+    path('api/payments/<str:provider>/callback/', api_views.payment_callback, name='api-payment-callback'),
+    path('api/payments/history/<int:client_id>/', api_views.payment_history, name='api-payment-history'),
+    
+    # Drugs
+    path('api/drugs/', api_views.drugs_api, name='api-drugs'),
+    
+    # Dashboard
+    path('api/dashboard/analytics/', api_views.dashboard_analytics, name='api-dashboard-analytics'),
+]

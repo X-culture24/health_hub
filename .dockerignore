@@ -1,0 +1,74 @@
+# Virtual environments
+venv/
+env/
+health_env/
+health_hub_env/
+myworld/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+frontend-vite/node_modules/
+
+# Vagrant
+.vagrant/
+
+# Git
+.git/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.sqlite3
+*.db
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+
+# Static files (will be generated in container)
+staticfiles/
+static/
+
+# Media files
+media/
+
+# Environment files with secrets
+.env.local
+.env.production
+
+# Documentation
+README*.md
+docs/
+
+# Test files
+test_*.py
+*_test.py
+
+# Backup files
+*.bak
+*.backup
+
+# Data directories
+data/postgres/
+data/logs/
+
+# Build artifacts
+build/
+dist/

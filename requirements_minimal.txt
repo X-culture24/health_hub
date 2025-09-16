@@ -1,0 +1,31 @@
+# Core Django and API Framework
+Django==4.2.7
+djangorestframework==3.14.0
+djangorestframework_simplejwt==5.5.0
+django-cors-headers==4.3.1
+django-filter==23.5
+drf-yasg==1.21.7
+
+# Database
+psycopg2-binary==2.9.9
+
+# Environment and Configuration
+python-decouple==3.8
+python-dotenv==1.0.0
+
+# Basic utilities
+requests==2.31.0
+python-dateutil==2.9.0.post0
+pytz==2025.2
+whitenoise==6.6.0
+asgiref==3.8.1
+sqlparse==0.5.3
+
+# File handling
+Pillow==10.1.0
+
+# PDF Generation
+reportlab==4.4.0
+
+# Package management
+setuptools==69.0.3

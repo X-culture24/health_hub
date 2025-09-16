@@ -15,15 +15,33 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { reports } from '../../services/api';
 
 const Reports = () => {
   const [reportType, setReportType] = useState('');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [reportData, setReportData] = useState(null);
+  const [reportError, setReportError] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
 
-  const handleGenerateReport = () => {
-    // TODO: Implement report generation
-    console.log('Generating report:', { reportType, startDate, endDate });
+  const handleGenerateReport = async () => {
+    setReportError('');
+    setReportData(null);
+    setReportLoading(true);
+    try {
+      const params = {
+        type: reportType,
+        start_date: startDate?.toISOString().slice(0, 10),
+        end_date: endDate?.toISOString().slice(0, 10),
+      };
+      const response = await reports.generate(params);
+      setReportData(response.data);
+    } catch (err) {
+      setReportError('Failed to generate report');
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   return (
@@ -79,7 +97,7 @@ const Reports = () => {
                 variant="contained"
                 color="primary"
                 onClick={handleGenerateReport}
-                disabled={!reportType || !startDate || !endDate}
+                disabled={!reportType || !startDate || !endDate || reportLoading}
               >
                 Generate Report
               </Button>
@@ -93,9 +111,38 @@ const Reports = () => {
         <Typography variant="h6" gutterBottom>
           Report Preview
         </Typography>
-        <Typography variant="body1" color="textSecondary">
-          Select a report type and date range to generate a report.
-        </Typography>
+        {reportLoading && <Typography>Loading...</Typography>}
+        {reportError && <Typography color="error">{reportError}</Typography>}
+        {reportData ? (
+          typeof reportData === 'object' && reportData !== null && !Array.isArray(reportData) ? (
+            Object.entries(reportData).map(([key, value]) => (
+              <div key={key} style={{ marginBottom: 8 }}>
+                <strong>{key}:</strong>{' '}
+                {Array.isArray(value) ? (
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {Array.isArray(value) ? value.map((item, idx) => (
+                      <li key={idx}>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</li>
+                    )) : null}
+                  </ul>
+                ) : (
+                  <span>{' '}{String(value)}</span>
+                )}
+              </div>
+            ))
+          ) : Array.isArray(reportData) ? (
+            <ul>
+              {reportData.map((item, idx) => (
+                <li key={idx}>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</li>
+              ))}
+            </ul>
+          ) : (
+            <span>{String(reportData)}</span>
+          )
+        ) : !reportLoading && !reportError && (
+          <Typography variant="body1" color="textSecondary">
+            Select a report type and date range to generate a report.
+          </Typography>
+        )}
       </Paper>
     </Container>
   );

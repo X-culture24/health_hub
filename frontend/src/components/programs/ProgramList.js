@@ -79,6 +79,16 @@ const ProgramList = () => {
                 <TableCell>
                   <Button color="primary" size="small" onClick={() => navigate(`/programs/${program.id}`)}>View</Button>
                   <Button color="secondary" size="small" onClick={() => navigate(`/programs/${program.id}/edit`)}>Edit</Button>
+                  <Button color="error" size="small" onClick={async () => {
+                    if (window.confirm('Are you sure you want to delete this program?')) {
+                      try {
+                        await programs.delete(program.id);
+                        setProgramsList(programsList.filter(p => p.id !== program.id));
+                      } catch (err) {
+                        setError('Failed to delete program');
+                      }
+                    }
+                  }}>Delete</Button>
                 </TableCell>
               </TableRow>
             )) : (

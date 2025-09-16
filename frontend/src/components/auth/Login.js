@@ -11,7 +11,7 @@ import {
     Link,
     CircularProgress
 } from '@mui/material';
-import authAPI from '../../services/authAPI';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -21,6 +21,7 @@ const Login = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
@@ -36,7 +37,7 @@ const Login = () => {
         
         try {
             console.log('Submitting login form...');
-            const result = await authAPI.login(formData);
+            const result = await login(formData);
             console.log('Login result:', result);
             
             if (result.success) {

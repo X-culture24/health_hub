@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Paper, Typography, Box, CircularProgress, Alert, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { Container, Paper, Typography, Box, CircularProgress, Alert, List, ListItem, ListItemText, Divider, Button } from '@mui/material';
 import { programs } from '../../services/api';
 
 const ProgramView = () => {
@@ -41,6 +41,18 @@ const ProgramView = () => {
           <ListItem><ListItemText primary="Created At" secondary={program.created_at ? new Date(program.created_at).toLocaleDateString() : ''} /></ListItem>
         </List>
       </Paper>
+      <Box display="flex" justifyContent="flex-end" mt={2}>
+        <Button color="error" variant="contained" onClick={async () => {
+          if (window.confirm('Are you sure you want to delete this program?')) {
+            try {
+              await programs.delete(id);
+              window.location.href = '/programs';
+            } catch (err) {
+              alert('Failed to delete program');
+            }
+          }
+        }}>Delete Program</Button>
+      </Box>
     </Container>
   );
 };
