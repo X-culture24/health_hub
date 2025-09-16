@@ -15,6 +15,7 @@ Vagrant.configure("2") do |config|
   config.vm.network "forwarded_port", guest: 3000, host: 9001, host_ip: "127.0.0.1"
   config.vm.network "forwarded_port", guest: 5432, host: 9002, host_ip: "127.0.0.1"
   config.vm.network "forwarded_port", guest: 6379, host: 9003, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 8080, host: 9004, host_ip: "127.0.0.1"
 
   # VM configuration
   config.vm.provider "virtualbox" do |vb|
@@ -42,7 +43,9 @@ Vagrant.configure("2") do |config|
       apt-transport-https \
       ca-certificates \
       gnupg \
-      lsb-release
+      lsb-release \
+      openjdk-11-jdk \
+      wget
 
     # Install Docker and Docker Compose
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -57,13 +60,27 @@ Vagrant.configure("2") do |config|
     systemctl enable docker
     systemctl start docker
 
+    # Install Jenkins
+    wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | apt-key add -
+    echo "deb https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list
+    apt-get update
+    apt-get install -y jenkins
+
+    # Start and enable Jenkins
+    systemctl enable jenkins
+    systemctl start jenkins
+
+    # Add jenkins user to docker group
+    usermod -aG docker jenkins
+
     # Create necessary directories
     mkdir -p /home/vagrant/kenya_health_system/data/logs
     mkdir -p /home/vagrant/kenya_health_system/data/postgres/backups
     chown -R vagrant:vagrant /home/vagrant/kenya_health_system
 
-    echo "Docker setup completed!"
+    echo "Docker and Jenkins setup completed!"
     echo "Access the VM with: vagrant ssh"
+    echo "Jenkins will be available at: http://localhost:9004"
     echo "To start the application with Docker:"
     echo "1. vagrant ssh"
     echo "2. cd kenya_health_system"

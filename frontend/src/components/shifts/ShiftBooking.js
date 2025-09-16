@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -23,8 +23,6 @@ import toast from 'react-hot-toast';
 
 const ShiftBooking = () => {
   const queryClient = useQueryClient();
-  const [selectedFacility, setSelectedFacility] = useState('');
-  const [selectedDate, setSelectedDate] = useState(null);
 
   const { control, handleSubmit, watch, reset } = useForm({
     defaultValues: {
@@ -42,7 +40,7 @@ const ShiftBooking = () => {
 
   const { data: facilitiesData } = useQuery('facilities', facilities.list);
 
-  const { data: availableSlots, isLoading: loadingSlots } = useQuery(
+  const { data: availableSlots } = useQuery(
     ['doctor-availability', watchedFacility, watchedDate],
     () => doctorAvailability.getByFacility(watchedFacility),
     {

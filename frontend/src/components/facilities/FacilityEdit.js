@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -86,7 +86,7 @@ const FacilityEdit = () => {
     resolver: yupResolver(schema),
   });
 
-  const { data: facility, isLoading } = useQuery(
+  const { isLoading } = useQuery(
     ['facility', id],
     () => facilities.getById(id),
     {

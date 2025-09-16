@@ -6,21 +6,15 @@ import {
   TextField,
   Button,
   Grid,
-  Card,
-  CardContent,
   Alert,
   Chip,
   List,
   ListItem,
   ListItemText,
-  Divider,
   CircularProgress,
 } from '@mui/material';
 import {
   Psychology as PsychologyIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Info as InfoIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation } from 'react-query';
 import { useForm, Controller } from 'react-hook-form';
@@ -29,9 +23,9 @@ import toast from 'react-hot-toast';
 
 const VirtualPharmacist = () => {
   const [consultationResult, setConsultationResult] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState('');
+  // const [selectedPatient] = useState('');
 
-  const { control, handleSubmit, watch, reset } = useForm({
+  const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       patient_id: '',
       symptoms: '',
@@ -54,15 +48,15 @@ const VirtualPharmacist = () => {
     }
   });
 
-  const interactionMutation = useMutation(virtualPharmacist.checkInteractions, {
-    onSuccess: (data) => {
-      toast.success('Drug interaction check completed');
-    },
-    onError: (error) => {
-      toast.error('Failed to check drug interactions');
-      console.error('Interaction check error:', error);
-    }
-  });
+  // const interactionMutation = useMutation(virtualPharmacist.checkInteractions, {
+  //   onSuccess: (data) => {
+  //     toast.success('Drug interaction check completed');
+  //   },
+  //   onError: (error) => {
+  //     toast.error('Failed to check drug interactions');
+  //     console.error('Interaction check error:', error);
+  //   }
+  // });
 
   const onSubmit = (data) => {
     consultMutation.mutate(data);
@@ -81,18 +75,18 @@ const VirtualPharmacist = () => {
     }
   };
 
-  const getRecommendationIcon = (type) => {
-    switch (type) {
-      case 'warning':
-        return <WarningIcon color="warning" />;
-      case 'approved':
-        return <CheckCircleIcon color="success" />;
-      case 'info':
-        return <InfoIcon color="info" />;
-      default:
-        return <InfoIcon />;
-    }
-  };
+  // const getRecommendationIcon = (type) => {
+  //   switch (type) {
+  //     case 'warning':
+  //       return <WarningIcon color="warning" />;
+  //     case 'approved':
+  //       return <CheckCircleIcon color="success" />;
+  //     case 'info':
+  //       return <InfoIcon color="info" />;
+  //     default:
+  //       return <InfoIcon />;
+  //   }
+  // };
 
   return (
     <Box sx={{ p: 3 }}>
